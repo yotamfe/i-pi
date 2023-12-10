@@ -22,6 +22,14 @@ from ipi.utils.exchange import *
 
 __all__ = ["NormalModes"]
 
+def shuffle_bead_indices_per_particle(q, first_bead_of_atom):
+    res = np.empty(q.shape)
+    for i in range(q.shape[1]):
+        res[:, i, :] = np.roll(q[:, i, :], axis=0, shift=first_bead_of_atom[i])
+    return res
+
+def reverse_shuffle_bead_indices_per_particle(q, first_bead_of_atom):
+    return shuffle_bead_indices_per_particle(q, (-1) * first_bead_of_atom)
 
 class NormalModes:
 
@@ -164,6 +172,8 @@ class NormalModes:
         self.natoms = beads.natoms
 
         self.bosons = self.resolve_bosons()
+        self._first_bead_of_atom = np.zeros(self.nbeads)
+        self._shuffle_counter = 0
         self.exchange = None
 
         # if ( (len(self.bosons) > 0) and (len(self.bosons) < self.natoms) ):
@@ -751,10 +761,15 @@ class NormalModes:
         betaP = 1.0 / (self.nbeads * units.Constants.kb * self.ensemble.temp)
         # positions of only the boson atoms
         q = self.beads.q.reshape((self.nbeads, self.natoms, 3))[:, self.bosons, :]
+        self._shuffle_counter += 1
+        if self._shuffle_counter % 100 == 0:
+            self._first_bead_of_atom = np.random.randint(low=0, high=self.nbeads, size=(self.nbeads,))
+        qshuffled = shuffle_bead_indices_per_particle(q, self._first_bead_of_atom)
         self.exchange = ExchangePotential(
-            len(self.bosons), q, self.nbeads, boson_mass, self.omegan2, betaP
+            len(self.bosons), qshuffled, self.nbeads, boson_mass, self.omegan2, betaP
         )
-        return self.exchange.get_vspring_and_fspring()
+        vspring, fspring_shuffled = self.exchange.get_vspring_and_fspring()
+        return vspring, reverse_shuffle_bead_indices_per_particle(fspring_shuffled, self._first_bead_of_atom)
 
     def get_fspring(self):
         """
