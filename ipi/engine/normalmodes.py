@@ -762,8 +762,9 @@ class NormalModes:
         # positions of only the boson atoms
         q = self.beads.q.reshape((self.nbeads, self.natoms, 3))[:, self.bosons, :]
         self._shuffle_counter += 1
-        if self._shuffle_counter % 100 == 0:
-            self._first_bead_of_atom = np.random.randint(low=0, high=self.nbeads, size=(self.nbeads,))
+        SHUFFLE_EVERY = 100 * self.nmts
+        if self._shuffle_counter % SHUFFLE_EVERY == 0:
+            self._first_bead_of_atom = np.repeat(np.random.randint(low=0, high=self.nbeads, size=1), self.nbeads)
         qshuffled = shuffle_bead_indices_per_particle(q, self._first_bead_of_atom)
         self.exchange = ExchangePotential(
             len(self.bosons), qshuffled, self.nbeads, boson_mass, self.omegan2, betaP
