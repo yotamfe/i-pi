@@ -1121,6 +1121,7 @@ class Properties:
         # ~ ncount += 1
 
         if ncount == 0:
+            # TODO: don't warn if bosons are matched
             warning(
                 "Couldn't find an atom which matched the argument of kinetic energy, setting to zero.",
                 verbosity.medium,
@@ -1307,6 +1308,17 @@ class Properties:
             iatom = -1
             latom = atom
 
+        if len(self.nm.bosons) > 1 and iatom in self.nm.bosons:
+            raise IndexError("Cannot output kinetic energy of single boson %d" % iatom)
+
+        # TODO: verify that the atoms involves include a non empty proper susbset of the bosons
+
+        res = self._kinetic_td_distinguishables(atom, iatom, latom)
+        if self.nm.exchange:
+            res += self.nm.exchange.get_kinetic_td()
+        return res
+
+    def _kinetic_td_distinguishables(self, atom, iatom, latom):
         q = dstrip(self.beads.q)
         m = dstrip(self.beads.m)
         PkT32 = 1.5 * Constants.kb * self.ensemble.temp * self.beads.nbeads
@@ -1315,6 +1327,9 @@ class Properties:
         ncount = 0
         for i in range(self.beads.natoms):
             if atom != "" and iatom != i and latom != self.beads.names[i]:
+                continue
+
+            if i in self.nm.bosons:
                 continue
 
             ktd = 0.0
