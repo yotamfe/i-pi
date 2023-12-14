@@ -172,7 +172,7 @@ class NormalModes:
         self.natoms = beads.natoms
 
         self.bosons = self.resolve_bosons()
-        self._first_bead_of_atom = np.zeros(self.nbeads)
+        self._first_bead_of_atom = np.zeros(len(self.bosons))
         self._shuffle_counter = 0
         self.exchange = None
 
@@ -764,7 +764,7 @@ class NormalModes:
         self._shuffle_counter += 1
         SHUFFLE_EVERY = 100 * self.nmts
         if self._shuffle_counter % SHUFFLE_EVERY == 0:
-            self._first_bead_of_atom = np.repeat(np.random.randint(low=0, high=self.nbeads, size=1), self.natoms)
+            self._first_bead_of_atom = np.repeat(np.random.randint(low=0, high=self.nbeads, size=1), len(self.bosons))
         qshuffled = shuffle_bead_indices_per_particle(q, self._first_bead_of_atom)
         self.exchange = ExchangePotential(
             len(self.bosons), qshuffled, self.nbeads, boson_mass, self.omegan2, betaP
