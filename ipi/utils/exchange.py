@@ -330,3 +330,42 @@ class ExchangePotential:
         factor = 1.5 * self._N / self._betaP
 
         return factor + est[self._N] / self._P
+class AllBeadsExchangePotential:
+    def __init__(self, nbosons, q, nbeads, bead_mass, spring_freq_squared, betaP):
+        print("positions")
+        print(q)
+        for j in range(self._P):
+            print("offset ", j)
+            print(np.roll(q, axis=0, shift=j))
+        self._exchanges = [ExchangePotential(nbosons, np.roll(q, axis=0, shift=j), nbeads, bead_mass, spring_freq_squared, betaP)
+                           for j in range(self._P)]
+
+    def get_vspring_and_fspring(self):
+        """
+        Returns spring potential and forces for bosons.
+        """
+        potential = np.mean(exchange.V_all() for exchange in self._exchanges)
+        forces = np.mean(np.asarray(np.roll(exchange.evalute_spring_forces(), axis=0, shift=-j)
+                                    for (j, exchange) in enumerate(self._exchanges)), axis=0)
+        return [potential, forces]
+
+    def get_distinct_probability(self):
+        """
+        Evaluate the probability of the configuration where all the particles are separate.
+        """
+        return np.mean(exchange.get_distinct_probability() for exchange in self._exchanges)
+
+    def get_longest_probability(self):
+        """
+        Evaluate the probability of a configuration where all the particles are connected,
+        divided by 1/N. Notice that there are (N-1)! permutations of this topology
+        (all represented by the cycle 0,1,...,N-1,0); this cancels the division by 1/N.
+        """
+        return np.mean(exchange.get_longest_probability() for exchange in self._exchanges)
+
+    def get_kinetic_td(self):
+        """Implementation of the Hirshberg-Rizzi-Parrinello primitive
+        kinetic energy estimator for identical particles.
+        Corresponds to Eqns. (4)-(5) in SI of pnas.1913365116.
+        """
+        return np.mean(exchange.get_kinetic_td() for exchange in self._exchanges)
