@@ -196,7 +196,18 @@ class ExchangePotential:
         for j in range(self._P):
             connection_probs[j] = self._connection_probabilities(j)
 
+        # # workaround - no exchange except one location
+        # for j in range(self._P - 1):
+        #     connection_probs[j] = np.zeros(self._N)
+        #     for l in range(self._N):
+        #         connection_probs[j, l, l] = 1.0
+
+        bead_diff_intra = np.diff(self._q, axis=0) # TODO: remove
         for j in range(self._P):
+            # if j not in [0, self._P - 1]:
+            #     F[j, :, :] = self._spring_force_prefix() * (-bead_diff_intra[j, :] + bead_diff_intra[j - 1, :])
+            #     continue
+
             # TODO: doc
             # on the last bead:
             #
@@ -214,13 +225,24 @@ class ExchangePotential:
             #     force_from_neighbors[:, :] = self._spring_force_prefix() * \
             #                         (-self._bead_diff_inter_first_last_bead[:, l] + self._bead_diff_intra[-1, l])
             #     F[-1, l, :] = np.dot(connection_probs[l][:], force_from_neighbors)
-            force_from_neighbors = self._spring_force_prefix() * (
+            force_from_next_neighbor = self._spring_force_prefix() * (
                 -np.transpose(self._bead_diff_inter_first_last_bead[j], axes=(1, 0, 2))
-                + self._bead_diff_inter_first_last_bead[j - 1]
             )
+            weighted_force_from_next_slice = np.einsum("ljk,lj->lk", force_from_next_neighbor, connection_probs[j])
+            force_from_prev_neighbor = self._spring_force_prefix() * (
+                self._bead_diff_inter_first_last_bead[j - 1]
+            )
+            weighted_force_from_prev_slice = np.einsum("ljk,jl->lk", force_from_prev_neighbor, connection_probs[j - 1])
             # TODO: doc
             # F[-1, l, k] = sum_{j}{force_from_neighbors[l][j][k] * connection_probs[l,j]}
-            F[j, :, :] = np.einsum("ljk,lj->lk", force_from_neighbors, connection_probs[j])
+            F[j, :, :] = weighted_force_from_next_slice + weighted_force_from_prev_slice
+
+        # np.set_printoptions(precision=8, suppress=False)
+        # print("round")
+        # print("probabilities")
+        # print(connection_probs[-1])
+        # print("forces")
+        # print(F)
 
         return F
 
@@ -291,7 +313,9 @@ class ExchangePotential:
         kinetic energy estimator for identical particles.
         Corresponds to Eqns. (4)-(5) in SI of pnas.1913365116.
         """
-        # TODO: return 0.0
+        # TODO:
+        return 0.0
+
         est = np.zeros(self._N + 1)
 
         for m in range(1, self._N + 1):
