@@ -12,7 +12,6 @@ from ipi.utils.depend import *
 import ipi.utils.units as units
 import sys
 
-
 def kth_diag_indices(a, k):
     """
     Indices to access matrix k-diagonals in numpy.
@@ -360,7 +359,13 @@ class ExchangePotential:
         # print("forces")
         # print(F)
 
-        return [np.sum(self.prefix_V[:, -1]), F]
+        return [self.logsumboltz(self.prefix_V[:, -1]), F]
+
+    def logsumboltz(self, arr):
+        Elong = np.min(arr)
+        sig = np.mean(np.exp(-self.betaP * (arr - Elong)))
+        assert sig.all() and np.all(np.isfinite(sig))
+        return Elong - np.log(sig) / self.betaP
 
     def get_distinct_probability(self):
         """
