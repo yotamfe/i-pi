@@ -371,6 +371,9 @@ class ExchangePotential:
         """
         Evaluate the probability of the configuration where all the particles are separate.
         """
+        # TODO:
+        return 0.0
+
         return np.exp(
             -self.betaP
             * (
@@ -388,6 +391,9 @@ class ExchangePotential:
         divided by 1/N. Notice that there are (N-1)! permutations of this topology
         (all represented by the cycle 0,1,...,N-1,0); this cancels the division by 1/N.
         """
+        # TODO:
+        return 0.0
+        
         return np.exp(
             -self.betaP
             * (dstrip(self.cycle_energies)[0, -1] - dstrip(self.prefix_V)[self.nbosons])
