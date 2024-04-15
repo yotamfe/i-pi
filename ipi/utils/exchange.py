@@ -119,9 +119,9 @@ class ExchangePotential:
         )
 
         # this is the main quantity used outside this
-        self._vspring_and_fspring = depend_value(
-            name="vspring_and_fspring",
-            func=self.get_vspring_and_fspring,
+        self._connection_probs = depend_value(
+            name="connection_probs",
+            func=self.get_connection_probs,
             dependencies=[
                 self._betaP,
                 self._omegan2,
@@ -129,6 +129,20 @@ class ExchangePotential:
                 self._suffix_V,
                 self._bead_diff_intra,
                 self._cycle_energies,
+                self._bead_diff_inter_first_last_bead,
+            ],
+        )
+
+        # this is the main quantity used outside this
+        self._vspring_and_fspring = depend_value(
+            name="vspring_and_fspring",
+            func=self.get_vspring_and_fspring,
+            dependencies=[
+                self._betaP,
+                self._omegan2,
+                self._prefix_V,
+                self._bead_diff_intra,
+                self._connection_probs,
                 self._bead_diff_inter_first_last_bead,
             ],
         )
@@ -156,6 +170,12 @@ class ExchangePotential:
             name="distinct_probability",
             func=self.get_distinct_probability,
             dependencies=[self._betaP, self._prefix_V, self._cycle_energies],
+        )
+
+        self._rpmd_velocity_estimator = depend_value(
+            name="rpmd_velocity_estimator",
+            func=self.get_rpmd_velocity_estimator,
+            dependencies=[self.beads._p, self._connection_probs],
         )
 
     def get_boson_mass(self):
@@ -289,47 +309,7 @@ class ExchangePotential:
 
         # force on endpoint beads
         #
-        cycle_energies = dstrip(self.cycle_energies)
-        prefix_V = dstrip(self.prefix_V)
-        suffix_V = dstrip(self.suffix_V)
-
-        connection_probs = np.zeros((self.nbosons, self.nbosons), float)
-        # close cycle probabilities:
-        # for u in range(0, self.nbosons):
-        #     for l in range(u, self.nbosons):
-        #         connection_probs[l][u] = 1 / (l + 1) * \
-        #                np.exp(- self.betaP *
-        #                        (self.prefix_V[u] + self.cycle_energies[u, l] + self.suffix_V[l+1]
-        #                         - self.prefix_V[self.nbosons]()))
-        tril_indices = np.tril_indices(self.nbosons, k=0)
-        connection_probs[tril_indices] = (
-            # np.asarray([1 / (l + 1) for l in range(self.nbosons)])[:, np.newaxis] *
-            np.reciprocal(np.arange(1.0, self.nbosons + 1))[:, np.newaxis]
-            * np.exp(
-                -self.betaP
-                * (
-                    # np.asarray([self.prefix_V(u - 1) for u in range(self.nbosons)])[np.newaxis, :]
-                    prefix_V[np.newaxis, :-1]
-                    # + np.asarray([(self.cycle_energies[u, l] if l >= u else 0) for l in range(self.nbosons)
-                    #                   for u in range(self.nbosons)]).reshape((self.nbosons, self.nbosons))
-                    + cycle_energies.T
-                    # + np.asarray([self.suffix_V(l + 1) for l in range(self.nbosons)])[:, np.newaxis]
-                    + suffix_V[1:, np.newaxis]
-                    - prefix_V[self.nbosons]
-                )
-            )
-        )[tril_indices]
-
-        # direct link probabilities:
-        # for l in range(self.nbosons - 1):
-        #     connection_probs[l][l+1] = 1 - (np.exp(- self.betaP * (self.prefix_V[l + 1] + self.suffix_V[l + 1] -
-        #                                         self.prefix_V[self.nbosons]())))
-        superdiagonal_indices = kth_diag_indices(connection_probs, k=1)
-        connection_probs[superdiagonal_indices] = 1 - (
-            np.exp(
-                -self.betaP * (prefix_V[1:-1] + suffix_V[1:-1] - prefix_V[self.nbosons])
-            )
-        )
+        connection_probs = dstrip(self.connection_probs)
 
         bead_diff_inter_first_last_bead = dstrip(self.bead_diff_inter_first_last_bead)
 
@@ -380,7 +360,53 @@ class ExchangePotential:
         # F[0, l, k] = sum_{j}{force_from_neighbors[l][j][k] * connection_probs[j,l]}
         F[0, :, :] = np.einsum("ljk,jl->lk", force_from_neighbors, connection_probs)
 
-        return [prefix_V[self.nbosons], F]
+        return [self.prefix_V[self.nbosons], F]
+
+    def get_connection_probs(self):
+        cycle_energies = dstrip(self.cycle_energies)
+        prefix_V = dstrip(self.prefix_V)
+        suffix_V = dstrip(self.suffix_V)
+
+        connection_probs = np.zeros((self.nbosons, self.nbosons), float)
+
+        # close cycle probabilities:
+        # for u in range(0, self.nbosons):
+        #     for l in range(u, self.nbosons):
+        #         connection_probs[l][u] = 1 / (l + 1) * \
+        #                np.exp(- self.betaP *
+        #                        (self.prefix_V[u] + self.cycle_energies[u, l] + self.suffix_V[l+1]
+        #                         - self.prefix_V[self.nbosons]()))
+        tril_indices = np.tril_indices(self.nbosons, k=0)
+        connection_probs[tril_indices] = (
+            # np.asarray([1 / (l + 1) for l in range(self.nbosons)])[:, np.newaxis] *
+                np.reciprocal(np.arange(1.0, self.nbosons + 1))[:, np.newaxis]
+                * np.exp(
+            -self.betaP
+            * (
+                # np.asarray([self.prefix_V(u - 1) for u in range(self.nbosons)])[np.newaxis, :]
+                    prefix_V[np.newaxis, :-1]
+                    # + np.asarray([(self.cycle_energies[u, l] if l >= u else 0) for l in range(self.nbosons)
+                    #                   for u in range(self.nbosons)]).reshape((self.nbosons, self.nbosons))
+                    + cycle_energies.T
+                    # + np.asarray([self.suffix_V(l + 1) for l in range(self.nbosons)])[:, np.newaxis]
+                    + suffix_V[1:, np.newaxis]
+                    - prefix_V[self.nbosons]
+            )
+        )
+        )[tril_indices]
+
+        # direct link probabilities:
+        # for l in range(self.nbosons - 1):
+        #     connection_probs[l][l+1] = 1 - (np.exp(- self.betaP * (self.prefix_V[l + 1] + self.suffix_V[l + 1] -
+        #                                         self.prefix_V[self.nbosons]())))
+        superdiagonal_indices = kth_diag_indices(connection_probs, k=1)
+        connection_probs[superdiagonal_indices] = 1 - (
+            np.exp(
+                -self.betaP * (prefix_V[1:-1] + suffix_V[1:-1] - prefix_V[self.nbosons])
+            )
+        )
+
+        return connection_probs
 
     def get_distinct_probability(self):
         """
@@ -470,6 +496,17 @@ class ExchangePotential:
 
         return W[-1]
 
+    def get_rpmd_velocity_estimator(self):
+        """
+        Velocity-velocity autocorrelation estimator for bosons.
+        """
+        # TODO: assumes that all particles are bosons
+        p = dstrip(self.beads.p).reshape((self.nbeads, self.nbosons, 3))
+        intraparticle_contribution = np.sum(p[1:,:,:], axis=0)
+        interparticle_contribution = np.einsum("lj,jk->lk", dstrip(self.connection_probs), p[0,:,:])
+        pc = (intraparticle_contribution + interparticle_contribution) / self.nbeads
+        return pc.reshape(self.nbosons * 3) / self.beads.m3[0]
+
 
 dproperties(
     ExchangePotential,
@@ -484,10 +521,12 @@ dproperties(
         "cycle_energies",
         "prefix_V",
         "suffix_V",
+        "connection_probs",
         "vspring_and_fspring",
         "kinetic_td",
         "distinct_probability",
         "longest_probability",
         "fermionic_sign",
+        "rpmd_velocity_estimator"
     ],
 )

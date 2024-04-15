@@ -2774,6 +2774,11 @@ class Trajectories:
                 "help": "The centroid velocity.",
                 "func": (lambda: self.system.beads.pc / self.system.beads.m3[0]),
             },
+            "v_bosonic_rpmd": {
+                "dimension": "velocity",
+                "help": "The velocity autocorrelation estimator for bosons.",
+                "func": (lambda: self.system.nm.exchange_potential.rpmd_velocity_estimator),
+            },
             "x_centroid_even": {
                 "dimension": "length",
                 "help": "The suzuki-chin centroid coordinates.",
