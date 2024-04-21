@@ -2769,6 +2769,12 @@ class Trajectories:
                 "help": "The centroid coordinates.",
                 "func": (lambda: 1.0 * self.system.beads.qc),
             },
+            "x_bosonic_rpmd": {
+                "dimension": "velocity",
+                "help": "The position time-zero estimator for bosons.",
+                # TODO: assumes that all particles are bosons
+                "func": (lambda: self.system.nm.exchange_potential.rpmd_position_estimator),
+            },
             "v_centroid": {
                 "dimension": "velocity",
                 "help": "The centroid velocity.",
@@ -2776,7 +2782,7 @@ class Trajectories:
             },
             "v_bosonic_rpmd": {
                 "dimension": "velocity",
-                "help": "The velocity autocorrelation estimator for bosons.",
+                "help": "The velocity time-zero estimator for bosons.",
                 # TODO: assumes that all particles are bosons
                 "func": (lambda: self.system.nm.exchange_potential.rpmd_velocity_estimator),
             },

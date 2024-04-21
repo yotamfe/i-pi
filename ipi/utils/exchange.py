@@ -172,6 +172,12 @@ class ExchangePotential:
             dependencies=[self._betaP, self._prefix_V, self._cycle_energies],
         )
 
+        self._rpmd_position_estimator = depend_value(
+            name="rpmd_position_estimator",
+            func=self.get_rpmd_position_estimator,
+            dependencies=[self._qbosons, self._connection_probs],
+        )
+
         self._rpmd_velocity_estimator = depend_value(
             name="rpmd_velocity_estimator",
             func=self.get_rpmd_velocity_estimator,
@@ -506,10 +512,18 @@ class ExchangePotential:
         interparticle_contribution = np.einsum("lj,jk->lk", dstrip(self.connection_probs), obs[0, :, :])
         return (intraparticle_contribution + interparticle_contribution) / self.nbeads
 
+    def get_rpmd_position_estimator(self):
+        """
+        Time-zero velocity estimator for bosonic real-time correlation estimators.
+        """
+        qc = self._rpmd_estimator(self.qbosons)
+        return qc.reshape(self.nbosons * 3) / self.beads.m3[0]
+
     def get_rpmd_velocity_estimator(self):
         """
         Time-zero velocity estimator for bosonic real-time correlation estimators.
         """
+        # TODO: assumes that all particles are bosons
         p = dstrip(self.beads.p).reshape((self.nbeads, self.nbosons, 3))
         pc = self._rpmd_estimator(p)
         return pc.reshape(self.nbosons * 3) / self.beads.m3[0]
@@ -534,6 +548,7 @@ dproperties(
         "distinct_probability",
         "longest_probability",
         "fermionic_sign",
+        "rpmd_position_estimator",
         "rpmd_velocity_estimator"
     ],
 )
