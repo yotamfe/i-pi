@@ -496,15 +496,22 @@ class ExchangePotential:
 
         return W[-1]
 
+    def _rpmd_estimator(self, obs):
+        """
+        Time-zero estimator for bosonic real-time correlation estimators.
+        obs has shape (self.nbeads, self.nbosons, 3),
+        and the result has shape (self.nbosons, 3)
+        """
+        intraparticle_contribution = np.sum(obs[1:, :, :], axis=0)
+        interparticle_contribution = np.einsum("lj,jk->lk", dstrip(self.connection_probs), obs[0, :, :])
+        return (intraparticle_contribution + interparticle_contribution) / self.nbeads
+
     def get_rpmd_velocity_estimator(self):
         """
-        Velocity-velocity autocorrelation estimator for bosons.
+        Time-zero velocity estimator for bosonic real-time correlation estimators.
         """
-        # TODO: assumes that all particles are bosons
         p = dstrip(self.beads.p).reshape((self.nbeads, self.nbosons, 3))
-        intraparticle_contribution = np.sum(p[1:,:,:], axis=0)
-        interparticle_contribution = np.einsum("lj,jk->lk", dstrip(self.connection_probs), p[0,:,:])
-        pc = (intraparticle_contribution + interparticle_contribution) / self.nbeads
+        pc = self._rpmd_estimator(p)
         return pc.reshape(self.nbosons * 3) / self.beads.m3[0]
 
 

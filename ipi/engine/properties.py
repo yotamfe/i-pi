@@ -2777,6 +2777,7 @@ class Trajectories:
             "v_bosonic_rpmd": {
                 "dimension": "velocity",
                 "help": "The velocity autocorrelation estimator for bosons.",
+                # TODO: assumes that all particles are bosons
                 "func": (lambda: self.system.nm.exchange_potential.rpmd_velocity_estimator),
             },
             "x_centroid_even": {
