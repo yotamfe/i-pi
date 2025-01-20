@@ -516,7 +516,7 @@ class Initializer:
                 )
                 rens = Ensemble(temp=simul.ensemble.temp)
                 rmv = Motion()
-                rnm.bind(rens, rmv, rbeads)
+                rnm.bind(rens, rmv, simul.cell, rbeads)
                 # then we exploit the sync magic to do a complicated initialization
                 # in the NM representation
                 # with (possibly) shifted-frequencies NM

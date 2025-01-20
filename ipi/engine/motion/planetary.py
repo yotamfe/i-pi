@@ -134,7 +134,7 @@ class Planetary(Motion):
             )
             self.dnm.mode = "manual"
 
-        self.dnm.bind(ens, self, beads=self.dbeads, forces=self.dforces)
+        self.dnm.bind(ens, self, self.dcell, beads=self.dbeads, forces=self.dforces)
         self.dnm.qnm[:] = (
             nm.qnm[: self.nbeads] * np.sqrt(self.nbeads) / np.sqrt(beads.nbeads)
         )

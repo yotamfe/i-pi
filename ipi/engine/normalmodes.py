@@ -37,6 +37,7 @@ class NormalModes:
        ensemble: The ensemble object, specifying the temperature to hold the
           system to.
        motion: The motion object that will need normal-mode transformation and propagator
+       cell: A cell object giving the system box.
        transform: A nm_trans object that contains the functions that are
           required for the normal mode transformation.
 
@@ -147,7 +148,7 @@ class NormalModes:
         )
         return newnm
 
-    def bind(self, ensemble, motion, beads=None, forces=None):
+    def bind(self, ensemble, motion, cell, beads=None, forces=None):
         """Initializes the normal modes object and binds to beads and ensemble.
 
         Do all the work down here as we need a full-formed necklace and ensemble
@@ -160,6 +161,7 @@ class NormalModes:
 
         self.ensemble = ensemble
         self.motion = motion
+        self.cell = cell
         if beads is None:
             self.beads = motion.beads
         else:

@@ -48,6 +48,8 @@ class ExchangePotential:
         self._domic = depend_value(name="domic", value=False)
         dpipe(nm._bosons_domic, self._domic)
 
+        self.cell = nm.cell
+
         self._betaP = depend_value(
             "betaP",
             func=lambda: 1.0
@@ -173,7 +175,7 @@ class ExchangePotential:
     def get_bead_diff_intra(self):
         distances = np.diff(dstrip(self.qbosons), axis=0)
         if self.domic:
-            distances = cell.array_pbc(distances)
+            distances = self.cell.array_pbc(distances)
         return distances
 
     def get_bead_diff_inter_first_last_bead(self):
@@ -182,7 +184,7 @@ class ExchangePotential:
                 - dstrip(self.qbosons)[self.nbeads - 1, np.newaxis, :, :]
         )
         if self.domic:
-            distances = cell.array_pbc(distances)
+            distances = self.cell.array_pbc(distances)
         return distances
 
     def get_cycle_energies(self):
