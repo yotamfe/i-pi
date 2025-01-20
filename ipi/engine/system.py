@@ -91,7 +91,9 @@ class System:
             open_paths=self.nm.open_paths,
             output_maker=simul.output_maker,
         )
-        self.nm.bind(self.ensemble, self.motion, self.cell, beads=self.beads, forces=self.forces)
+        self.nm.bind(
+            self.ensemble, self.motion, self.cell, beads=self.beads, forces=self.forces
+        )
         self.ensemble.bind(
             self.beads,
             self.nm,

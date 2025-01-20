@@ -186,8 +186,8 @@ class ExchangePotential:
 
     def get_bead_diff_inter_first_last_bead(self):
         distances = (
-                dstrip(self.qbosons)[0, :, np.newaxis, :]
-                - dstrip(self.qbosons)[self.nbeads - 1, np.newaxis, :, :]
+            dstrip(self.qbosons)[0, :, np.newaxis, :]
+            - dstrip(self.qbosons)[self.nbeads - 1, np.newaxis, :, :]
         )
         distances = self._apply_mic_if_enabled(distances)
         return distances

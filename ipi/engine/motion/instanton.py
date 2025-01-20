@@ -242,7 +242,9 @@ class InstantonMotion(Motion):
             transform_method="matrix", open_paths=np.arange(self.beads.natoms)
         )
 
-        self.nm.bind(self.ensemble, self, cell, Beads(self.beads.natoms, self.beads.nbeads))
+        self.nm.bind(
+            self.ensemble, self, cell, Beads(self.beads.natoms, self.beads.nbeads)
+        )
         if self.options["mode"] == "rate":
             self.rp_factor = 2
         elif self.options["mode"] == "splitting":
