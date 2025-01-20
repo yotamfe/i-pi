@@ -174,7 +174,7 @@ class ExchangePotential:
 
     def _apply_mic_if_enabled(self, distances):
         if not self.domic:
-            return
+            return distances
 
         self.cell.array_pbc(distances.reshape(-1))
         return distances
