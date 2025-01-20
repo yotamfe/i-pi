@@ -115,7 +115,7 @@ class InputBosons(InputArray):
 
         super(InputBosons, self).__init__(help=help, default=default, dtype=str)
 
-    def store(self, bosons):
+    def store(self, bosons, bosonic_domic=False):
         """Converts the data to the appropriate data type, shape and units and
         stores it.
 
@@ -125,7 +125,7 @@ class InputBosons(InputArray):
         """
 
         self.id.store("index")
-        self.mic.store(False) # TODO:
+        self.mic.store(bosonic_domic)
         super(InputBosons, self).store(bosons)
 
     def fetch(self):
@@ -232,7 +232,7 @@ class InputNormalModes(Input):
         self.frequencies.store((nm.mode, nm.nm_freqs))
         self.propagator.store(nm.propagator)
         self.open_paths.store(nm.open_paths)
-        self.bosons.store(nm.bosons)
+        self.bosons.store(nm.bosons, nm.bosons_domic)
         self.nmts.store(nm.nmts)
 
     def fetch(self):
