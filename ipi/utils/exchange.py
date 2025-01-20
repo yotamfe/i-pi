@@ -172,10 +172,16 @@ class ExchangePotential:
             )
         return masses[0]
 
+    def _apply_mic_if_enabled(self, distances):
+        if not self.domic:
+            return
+
+        self.cell.array_pbc(distances.reshape(-1))
+        return distances
+
     def get_bead_diff_intra(self):
         distances = np.diff(dstrip(self.qbosons), axis=0)
-        if self.domic:
-            distances = self.cell.array_pbc(distances)
+        distances = self._apply_mic_if_enabled(distances)
         return distances
 
     def get_bead_diff_inter_first_last_bead(self):
@@ -183,8 +189,7 @@ class ExchangePotential:
                 dstrip(self.qbosons)[0, :, np.newaxis, :]
                 - dstrip(self.qbosons)[self.nbeads - 1, np.newaxis, :, :]
         )
-        if self.domic:
-            distances = self.cell.array_pbc(distances)
+        distances = self._apply_mic_if_enabled(distances)
         return distances
 
     def get_cycle_energies(self):
