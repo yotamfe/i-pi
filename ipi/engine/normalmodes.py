@@ -85,6 +85,7 @@ class NormalModes:
         freqs=None,
         open_paths=None,
         bosons=None,
+        bosons_domic=False,
         dt=1.0,
         nmts=1,
         fft_threads=1,
@@ -109,6 +110,7 @@ class NormalModes:
         if bosons is None:
             bosons = np.zeros(0, int)
         self._bosons = depend_value(name="bosons", value=bosons)
+        self._bosons_domic = depend_value(name="bosons_domic", value=bosons_domic)
         self._nmts = depend_value(name="nmts", value=nmts)
         self._dt = depend_value(name="dt", value=dt)
         self._mode = depend_value(name="mode", value=mode)
@@ -137,6 +139,7 @@ class NormalModes:
             freqs,
             self.open_paths,
             self.bosons,
+            self.bosons_domic,
             self.dt,
             self.nmts,
             self.fft_threads,
@@ -169,7 +172,7 @@ class NormalModes:
         # storage space for the propagator
         self.pq_buffer = np.zeros((2, self.natoms * 3), float)
 
-        self.bosons = self.resolve_bosons()
+        self.bosons, self.bosons_domic = self.resolve_bosons()
 
         # stores a reference to the bound beads and ensemble objects
         self.ensemble = ensemble
@@ -406,9 +409,9 @@ class NormalModes:
 
     def resolve_bosons(self):
         if not isinstance(self.bosons, tuple):
-            return self.bosons
+            return self.bosons, self.bosons_domic
 
-        bosons_lst, id_mode = self.bosons
+        bosons_lst, id_mode, domic = self.bosons
         if id_mode == "index":
             bosons_array = bosons_lst.astype(int)
         elif id_mode == "label":
@@ -432,7 +435,7 @@ class NormalModes:
         ):
             raise ValueError("Invalid index for boson, got %s" % str(bosons_array))
 
-        return bosons_array
+        return bosons_array, domic
 
     def get_omegan(self):
         """Returns the effective vibrational frequency for the interaction
@@ -983,6 +986,7 @@ dproperties(
         "propagator",
         "nm_freqs",
         "bosons",
+        "bosons_domic",
         "qnm",
         "pnm",
         "fnm",

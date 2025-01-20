@@ -75,7 +75,7 @@ free particle, and all the normal modes will coincide at frequency wmax.
 
 
 class InputBosons(InputArray):
-    """Storage class for the input of which atoms have bosonic idistinguishability.
+    """Storage class for the input of which atoms have bosonic indistinguishability.
 
     Attributes:
        shape: The shape of the array.
@@ -89,6 +89,14 @@ class InputBosons(InputArray):
             "default": "index",
             "options": ["index", "label"],
             "help": "If 'id' is 'index', then bosonic atoms are specified a list of indices (zero-based). If 'id' is 'label' then specify a list of labels.",
+        },
+    )
+    attribs["mic"] = (
+        InputAttribute,
+        {
+            "dtype": bool,
+            "default": False,
+            "help": "Apply the minimum-image convention to the springs when propagating the bosons.",
         },
     )
 
@@ -107,24 +115,25 @@ class InputBosons(InputArray):
 
         super(InputBosons, self).__init__(help=help, default=default, dtype=str)
 
-    def store(self, value):
+    def store(self, bosons):
         """Converts the data to the appropriate data type, shape and units and
         stores it.
 
         Args:
-           value: The raw data to be stored.
-           id: The specification mode of the atoms.
+           bosons: The raw data to be stored.
+           bosons_domic: Whether minimum-image convention should be applied to the springs when propagating the bosons.
         """
 
         self.id.store("index")
-        super(InputBosons, self).store(value)
+        self.mic.store(False) # TODO:
+        super(InputBosons, self).store(bosons)
 
     def fetch(self):
         """Returns the stored data in the user defined units."""
 
         value = super(InputBosons, self).fetch()
 
-        return (value, self.id.fetch())
+        return (value, self.id.fetch(), self.mic.fetch())
 
 
 class InputNormalModes(Input):
@@ -235,6 +244,7 @@ class InputNormalModes(Input):
             freqs,
             open_paths=self.open_paths.fetch(),
             bosons=self.bosons.fetch(),
+            bosons_domic=self.bosons.mic.fetch(),
             nmts=self.nmts.fetch(),
             fft_threads=self.fft_threads.fetch(),
             fft_float32=self.fft_float32.fetch(),

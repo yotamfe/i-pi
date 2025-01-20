@@ -45,6 +45,9 @@ class ExchangePotential:
         )
         dpipe(nm._bosons, self._bosons)
 
+        self._domic = depend_value(name="domic", value=False)
+        dpipe(nm._bosons_domic, self._domic)
+
         self._betaP = depend_value(
             "betaP",
             func=lambda: 1.0
@@ -73,19 +76,16 @@ class ExchangePotential:
         self._bead_diff_intra = depend_array(
             name="bead_diff_intra",
             value=np.zeros((self.nbeads - 1, self.nbosons, 3)),
-            func=lambda: np.diff(dstrip(self.qbosons), axis=0),
-            dependencies=[self._qbosons],
+            func=self.get_bead_diff_intra,
+            dependencies=[self._qbosons, self._domic],
         )
 
         # self.bead_dist_inter_first_last_bead[l][m] = r^0_{l} - r^{P-1}_{m}
         self._bead_diff_inter_first_last_bead = depend_array(
             name="bead_diff_inter_first_last_bead",
             value=np.zeros((self.nbosons, self.nbosons, 3)),
-            func=lambda: (
-                dstrip(self.qbosons)[0, :, np.newaxis, :]
-                - dstrip(self.qbosons)[self.nbeads - 1, np.newaxis, :, :]
-            ),
-            dependencies=[self._qbosons],
+            func=self.get_bead_diff_inter_first_last_bead,
+            dependencies=[self._qbosons, self._domic],
         )
         # cycle energies:
         # self.cycle_energies[u, v] is the ring polymer energy of the cycle on particle indices u,...,v
@@ -169,6 +169,21 @@ class ExchangePotential:
                 % (str(masses), str(self.bosons))
             )
         return masses[0]
+
+    def get_bead_diff_intra(self):
+        distances = np.diff(dstrip(self.qbosons), axis=0)
+        if self.domic:
+            distances = cell.array_pbc(distances)
+        return distances
+
+    def get_bead_diff_inter_first_last_bead(self):
+        distances = (
+                dstrip(self.qbosons)[0, :, np.newaxis, :]
+                - dstrip(self.qbosons)[self.nbeads - 1, np.newaxis, :, :]
+        )
+        if self.domic:
+            distances = cell.array_pbc(distances)
+        return distances
 
     def get_cycle_energies(self):
         """
@@ -476,6 +491,7 @@ dproperties(
     [
         "omegan2",
         "bosons",
+        "domic",
         "qbosons",
         "betaP",
         "boson_m",
