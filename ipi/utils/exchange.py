@@ -235,7 +235,7 @@ class ExchangePotential:
 
     def get_suffix_V(self):
         """
-        Evaluate V^[1,N], V^[2,N], ..., V^[N,N], as outlined in Eq. 16 of arXiv:2305.18025.
+        Evaluate V^[1,N], V^[2,N], ..., V^[N,N], as outlined in Eq. 15 of arXiv:2305.18025.
         (In the code, particle indices start from 0.)
         Returns a vector of these potentials, in this order.
         Assumes that both the cycle energies self.cycle_energies and prefix potentials self.prefix_V have been computed.
